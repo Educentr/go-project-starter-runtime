@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2025-01-28
+
+### Added
+- Actor model in `pkg/model/actor/actor.go`:
+  - `Actor` struct - ephemeral user entity
+  - `New()` - constructor from authorization data
+  - `GetID()` - implements `ds.Actor` interface
+
+### Changed
+- Template construction `{{ .ProjectPath }}` replaced with hardcoded runtime path
+- First package with template transformation
+
+### Notes
+- Compatible with generated projects from go-project-starter v1.x
+
 ## [0.1.0] - 2025-01-28
 
 ### Added
