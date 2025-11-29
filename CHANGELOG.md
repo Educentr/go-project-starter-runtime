@@ -7,6 +7,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] - 2025-01-29
+
+### Added
+- Application core package in `pkg/app/`:
+  - `app.go` - Main App struct with lifecycle management for drivers, transports, workers
+  - `closer.go` - Graceful shutdown mechanism with timeout handling
+  - `metrics/metrics.go` - Metrics initialization via OpenTelemetry
+  - `metrics/build_collector.go` - Build info collector for Prometheus
+  - `healthstate/service.go` - Health check service implementation
+  - `serviceauth/auth.go` - Base authorizer implementation
+- ActiveRecord initialization support (always available via `InitActiveRecord` method)
+
+### Changed
+- Removed all logger calls from app package (library returns errors instead of logging)
+- Template constructions removed:
+  - `{{ .Logger.Import }}` → removed
+  - `{{ .Logger.InfoMsg }}`, `{{ .Logger.WarnMsg }}`, `{{ .Logger.ErrorMsg }}` → removed
+  - `{{ if .UseActiveRecord }}` → removed (ActiveRecord methods always available)
+  - `{{ .ProjectPath }}` → hardcoded runtime path
+
+### Notes
+- Breaking change: Applications must handle logging themselves - library only returns errors
+- ActiveRecord methods are always available regardless of usage
+- Compatible with generated projects from go-project-starter v1.x
+
 ## [0.3.0] - 2025-01-28
 
 ### Added
