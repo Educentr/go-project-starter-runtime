@@ -20,6 +20,7 @@ const (
 	requestStartTimeField
 	metricHist
 	metricCount
+	processInfoField
 )
 
 var (
@@ -183,4 +184,24 @@ func FlushCumulativeMetric(ctx context.Context, requestName string, labels ...st
 			ccm.FlushMetric(requestName, labels...)
 		}
 	}
+}
+
+// SetProcessInfo stores RequestProcessInfo in context
+func SetProcessInfo(ctx context.Context, info *RequestProcessInfo) context.Context {
+	return context.WithValue(ctx, processInfoField, info)
+}
+
+// GetProcessInfo retrieves RequestProcessInfo from context
+func GetProcessInfo(ctx context.Context) (*RequestProcessInfo, error) {
+	pii := ctx.Value(processInfoField)
+	if pii == nil {
+		return nil, errors.New("processInfo not found in context")
+	}
+
+	pi, ok := pii.(*RequestProcessInfo)
+	if !ok {
+		return nil, errors.New("invalid processInfo object")
+	}
+
+	return pi, nil
 }
