@@ -7,6 +7,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 2025-01-28
+
+### Added
+- Request context management in `pkg/reqctx/`:
+  - `context.go` - Context creation, actor/request ID management
+  - `cumulative_metric.go` - Cumulative metrics tracking
+  - `info.go` - Request processing info
+  - `logger.go` - Logger context updater interface (callback pattern)
+- Logger-agnostic design with `LoggerContextUpdater` interface
+- Support for logger context enrichment via callback
+
+### Changed
+- Removed direct logger dependency from reqctx package
+- `CreateContext()` no longer wraps logger (caller responsibility)
+- Logger context updates now use callback interface instead of direct calls
+- Template constructions removed:
+  - `{{ .Logger.Import }}` → removed
+  - `{{ .Logger.ErrorMsg }}` → removed (library doesn't log)
+  - `{{ .Logger.UpdateContext }}` → callback via `LoggerContextUpdater`
+  - `{{ .ProjectPath }}` → hardcoded runtime path
+
+### Notes
+- Breaking change: Applications must call `reqctx.SetLoggerUpdater()` to enable logger context enrichment
+- Example zerolog adapter provided in documentation
+
 ## [0.2.0] - 2025-01-28
 
 ### Added
