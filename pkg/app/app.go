@@ -7,10 +7,6 @@ import (
 	"strings"
 	"sync/atomic"
 
-	"github.com/Educentr/go-activerecord/v3/pkg/activerecord"
-	"github.com/Educentr/go-activerecord/v3/pkg/logger"
-	"github.com/Educentr/go-activerecord/v3/pkg/logger/arzlog"
-	"github.com/Educentr/go-onlineconf/pkg/onlineconf"
 	"github.com/go-faster/errors"
 	"github.com/povilasv/prommod"
 	"github.com/prometheus/client_golang/prometheus"
@@ -68,9 +64,6 @@ type App struct {
 
 	// Метрики
 	metrics *prometheus.Registry
-
-	// Флаг использования ActiveRecord
-	useActiveRecord bool
 }
 
 type EmptyUserSetFunc struct{}
@@ -102,12 +95,11 @@ var (
 	errServiceEmpty         = errors.New("service is empty")
 )
 
-func New(ctx context.Context, serviceName, name string, info *ds.AppInfo, useActiveRecord bool) (*App, error) {
+func New(ctx context.Context, serviceName, name string, info *ds.AppInfo) (*App, error) {
 	app := &App{
-		info:            info,
-		name:            name,
-		serviceName:     serviceName,
-		useActiveRecord: useActiveRecord,
+		info:        info,
+		name:        name,
+		serviceName: serviceName,
 	}
 
 	var err error
@@ -243,13 +235,6 @@ func (a *App) Init(ctx context.Context) error {
 		return errors.Wrap(err, "can't initialize worker")
 	}
 
-	if a.useActiveRecord {
-		err = a.InitActiveRecord(logger.InfoLoggerLevel)
-		if err != nil {
-			return errors.Wrap(err, "can't initialize activerecord")
-		}
-	}
-
 	return nil
 }
 
@@ -318,12 +303,7 @@ func (a *App) Stop() error {
 	return nil
 }
 
-func (a *App) InitActiveRecord(level logger.LogLevel) error {
-	activerecord.InitActiveRecord(
-		activerecord.WithLogger(arzlog.NewARLogger(level)),
-		activerecord.WithConfig(func(ctx context.Context) activerecord.ConfigInterface { return onlineconf.FromContext(ctx) }),
-		activerecord.WithMetrics(activerecord.NewARMetrics(a.metrics, nil)),
-	)
-
-	return nil
+// GetMetrics returns the prometheus registry for activerecord initialization
+func (a *App) GetMetrics() *prometheus.Registry {
+	return a.metrics
 }
