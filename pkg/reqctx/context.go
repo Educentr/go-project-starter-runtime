@@ -34,6 +34,11 @@ var (
 // CreateContext creates a new context with cloned onlineconf config and timeout.
 // Note: This function does NOT wrap the logger - that's the responsibility of the calling code.
 // The caller should wrap the logger after calling this function if needed.
+//
+// TODO: Refactor to remove onlineconf dependency:
+// 1. onlineconf.Clone should return a cleanup callback that does Release
+// 2. CreateContext should accept timeout settings as input parameter (not fetch from onlineconf)
+// 3. This will allow runtime to be independent of configuration system
 func CreateContext(mainCtx, configCtx context.Context, configPathPrefix, configPath string) (context.Context, context.CancelFunc) {
 	// Clone onlineconf config from main context
 	cpCtx, err := onlineconf.Clone(configCtx, mainCtx)
