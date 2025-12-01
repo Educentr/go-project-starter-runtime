@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/otlptranslator"
 
 	"go.opentelemetry.io/otel"
 	exporter "go.opentelemetry.io/otel/exporters/prometheus"
@@ -13,7 +14,10 @@ import (
 func InitMetrics(_ context.Context) (*prometheus.Registry, error) {
 	registry := prometheus.NewRegistry()
 
-	exp, err := exporter.New(exporter.WithRegisterer(registry))
+	exp, err := exporter.New(
+		exporter.WithRegisterer(registry),
+		exporter.WithTranslationStrategy(otlptranslator.UnderscoreEscapingWithSuffixes),
+	)
 	if err != nil {
 		panic(err)
 	}
