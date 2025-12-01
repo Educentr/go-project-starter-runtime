@@ -25,6 +25,7 @@ const (
 
 var (
 	ErrUndefinedActor            = fmt.Errorf("undefined actor")
+	ErrCreateContext             = fmt.Errorf("failed to create request context")
 	errEmptyRequestID            = fmt.Errorf("setRequestID in context error: RID is empty")
 	errUndefinedRequestStartTime = fmt.Errorf("undefined RequestStartTime")
 	errInvalidRequestStartTime   = fmt.Errorf("invalid RequestStartTime value type")
@@ -35,16 +36,18 @@ var (
 // Note: This function does NOT wrap the logger - that's the responsibility of the calling code.
 // The caller should wrap the logger after calling this function if needed.
 //
+// Returns error if onlineconf config cloning fails. Callers should handle this error
+// appropriately (e.g., return 500 Internal Server Error in REST handlers).
+//
 // TODO: Refactor to remove onlineconf dependency:
 // 1. onlineconf.Clone should return a cleanup callback that does Release
 // 2. CreateContext should accept timeout settings as input parameter (not fetch from onlineconf)
 // 3. This will allow runtime to be independent of configuration system
-func CreateContext(mainCtx, configCtx context.Context, configPathPrefix, configPath string) (context.Context, context.CancelFunc) {
+func CreateContext(mainCtx, configCtx context.Context, configPathPrefix, configPath string) (context.Context, context.CancelFunc, error) {
 	// Clone onlineconf config from main context
 	cpCtx, err := onlineconf.Clone(configCtx, mainCtx)
 	if err != nil {
-		// Return main context on error (library code doesn't log)
-		return mainCtx, func() {}
+		return mainCtx, func() {}, errors.Wrap(ErrCreateContext, err.Error())
 	}
 
 	pCtx := cpCtx
@@ -65,7 +68,7 @@ func CreateContext(mainCtx, configCtx context.Context, configPathPrefix, configP
 	return pCtx, func() {
 		cancel()
 		_ = onlineconf.Release(configCtx, cpCtx)
-	}
+	}, nil
 }
 
 func GetActor(ctx context.Context) (ds.Actor, error) {
