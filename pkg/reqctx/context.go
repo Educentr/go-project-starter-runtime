@@ -43,6 +43,14 @@ var (
 // 1. onlineconf.Clone should return a cleanup callback that does Release
 // 2. CreateContext should accept timeout settings as input parameter (not fetch from onlineconf)
 // 3. This will allow runtime to be independent of configuration system
+//
+// TODO: Add callback support for context creation hooks:
+// 1. Accept variadic callback functions that will be called after context creation
+// 2. Each callback receives (sourceCtx, newCtx, configPathPrefix, configPath) and returns modified context
+// 3. This allows automatic logger rewrapping and other context transformations
+// 4. Example signature: CreateContext(..., callbacks ...ContextCallback) where
+//    type ContextCallback func(source, dest context.Context, prefix, path string) context.Context
+// 5. Callbacks are called in order, each receiving the result of the previous one
 func CreateContext(mainCtx, configCtx context.Context, configPathPrefix, configPath string) (context.Context, context.CancelFunc, error) {
 	// Clone onlineconf config from main context
 	cpCtx, err := onlineconf.Clone(configCtx, mainCtx)
