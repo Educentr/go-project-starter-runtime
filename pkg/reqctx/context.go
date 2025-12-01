@@ -52,30 +52,38 @@ var (
 //    type ContextCallback func(source, dest context.Context, prefix, path string) context.Context
 // 5. Callbacks are called in order, each receiving the result of the previous one
 func CreateContext(mainCtx, configCtx context.Context, configPathPrefix, configPath string) (context.Context, context.CancelFunc, error) {
+	// Get timeout from onlineconf before cloning
+	ocDefaultPath := onlineconf.MakePath(configPathPrefix, "default/timeout")
+	ocPath := onlineconf.MakePath(configPathPrefix, configPath, "timeout")
+
+	timeoutDef, err := onlineconf.GetDuration(configCtx, ocDefaultPath, 0)
+	if err != nil {
+		return mainCtx, func() {}, errors.Wrapf(ErrCreateContext, "get default timeout from %s: %v", ocDefaultPath, err)
+	}
+
+	timeout, err := onlineconf.GetDuration(configCtx, ocPath, timeoutDef)
+	if err != nil {
+		return mainCtx, func() {}, errors.Wrapf(ErrCreateContext, "get timeout from %s: %v", ocPath, err)
+	}
+
 	// Clone onlineconf config from main context
-	cpCtx, err := onlineconf.Clone(configCtx, mainCtx)
+	clonedCtx, err := onlineconf.Clone(configCtx, mainCtx)
 	if err != nil {
 		return mainCtx, func() {}, errors.Wrap(ErrCreateContext, err.Error())
 	}
 
-	pCtx := cpCtx
-
-	// Get timeout from onlineconf
-	ocDefaultPath := onlineconf.MakePath(configPathPrefix, "default/timeout")
-	ocPath := onlineconf.MakePath(configPathPrefix, configPath, "timeout")
-
-	timeoutDef, _ := onlineconf.GetDuration(pCtx, ocDefaultPath, 0)
-	timeout, _ := onlineconf.GetDuration(pCtx, ocPath, timeoutDef)
-
+	// resultCtx will be wrapped with timeout if needed, but we keep clonedCtx
+	// separately for onlineconf.Release which requires the original cloned context
+	resultCtx := clonedCtx
 	var cancel context.CancelFunc = func() {}
 
 	if timeout != 0 {
-		pCtx, cancel = context.WithTimeout(pCtx, timeout)
+		resultCtx, cancel = context.WithTimeout(clonedCtx, timeout)
 	}
 
-	return pCtx, func() {
+	return resultCtx, func() {
 		cancel()
-		_ = onlineconf.Release(configCtx, cpCtx)
+		_ = onlineconf.Release(configCtx, clonedCtx)
 	}, nil
 }
 
