@@ -3,7 +3,6 @@ package app
 import (
 	"context"
 	"errors"
-	"os"
 	"os/signal"
 	"syscall"
 	"time"
@@ -20,8 +19,6 @@ const (
 	gracefulShutdownTimeout = 30 * time.Second
 	loggerObjectName        = "object"
 )
-
-var Interrupt os.Signal = syscall.SIGINT | syscall.SIGTERM | syscall.SIGKILL
 
 func gracefullyShutdown(shutdownCtx context.Context, closer IGracefulShuhtdown, name string) {
 	stopped, err := closer.GracefulStop(shutdownCtx)
@@ -49,7 +46,8 @@ func gracefullyShutdown(shutdownCtx context.Context, closer IGracefulShuhtdown, 
 
 func (a *App) InitGracefulStop(ctx context.Context) context.Context {
 	// graceful shutdown
-	ctx, a.ctxStop = signal.NotifyContext(ctx, Interrupt)
+	// Note: SIGKILL cannot be caught in Unix, so we only listen for SIGINT and SIGTERM
+	ctx, a.ctxStop = signal.NotifyContext(ctx, syscall.SIGINT, syscall.SIGTERM)
 
 	// init error group
 	a.errGr, ctx = errgroup.WithContext(ctx)
