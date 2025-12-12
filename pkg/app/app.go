@@ -102,24 +102,29 @@ func New(ctx context.Context, serviceName, name string, info *ds.AppInfo) (*App,
 		serviceName: serviceName,
 	}
 
+	return app, nil
+}
+
+// InitMetrics initializes prometheus metrics registry
+// Should be called only if application has sys transport that exposes /metrics endpoint
+func (a *App) InitMetrics(ctx context.Context) error {
 	var err error
 
-	// Инициализируем метрики
-	if app.metrics, err = metrics.InitMetrics(ctx); err != nil {
-		return nil, err
+	if a.metrics, err = metrics.InitMetrics(ctx); err != nil {
+		return err
 	}
 
-	nameForMetric := strings.ReplaceAll(serviceName+name, "-", "_")
+	nameForMetric := strings.ReplaceAll(a.serviceName+a.name, "-", "_")
 
-	app.metrics.MustRegister(
+	a.metrics.MustRegister(
 		collectors.NewProcessCollector(collectors.ProcessCollectorOpts{}),
 		collectors.NewGoCollector(),
 		collectors.NewBuildInfoCollector(),
-		metrics.BuildInfoCollector(nameForMetric, app.info),
+		metrics.BuildInfoCollector(nameForMetric, a.info),
 		prommod.NewCollector("server"),
 	)
 
-	return app, err
+	return nil
 }
 
 func (a *App) InitService(ctx context.Context) error {
