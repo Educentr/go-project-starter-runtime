@@ -35,6 +35,9 @@ type App struct {
 	// Драйверы для работы с данными
 	drivers []ds.Runnable
 
+	// Клиенты для инициализации в сервисе (ogen_client, buf_client)
+	clients []ds.ClientInitializer
+
 	// Драйверы инициализированы
 	driverInit atomic.Bool
 
@@ -134,7 +137,7 @@ func (a *App) InitService(ctx context.Context) error {
 
 	bucket := ds.ServerBucket{AppInfo: a.info, AppReady: &a.ready}
 
-	err := a.service.InitService(ctx, a.drivers, bucket, a.metrics)
+	err := a.service.InitService(ctx, a.drivers, a.clients, bucket, a.metrics)
 	if err != nil {
 		return errors.Wrap(err, "can't create new service")
 	}
@@ -170,6 +173,12 @@ func (a *App) SetDriver(driver ...ds.Runnable) error {
 	a.drivers = append(a.drivers, driver...)
 
 	return nil
+}
+
+// SetClient registers clients (ogen_client, buf_client wrappers) to be initialized in service.
+// Clients are passed to service.InitService() where they are initialized via type switch.
+func (a *App) SetClient(client ...ds.ClientInitializer) {
+	a.clients = append(a.clients, client...)
 }
 
 func (a *App) InitTransports(ctx context.Context) error {

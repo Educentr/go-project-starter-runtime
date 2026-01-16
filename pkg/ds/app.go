@@ -12,7 +12,7 @@ import (
 )
 
 type IService interface {
-	InitService(ctx context.Context, drvs []Runnable, bucket ServerBucket, m *prometheus.Registry) error
+	InitService(ctx context.Context, drvs []Runnable, clients []ClientInitializer, bucket ServerBucket, m *prometheus.Registry) error
 	HitInfo(ctx context.Context, method string, u *url.URL, status int, contentLength int, ip string, contentType string, userAgent string, referer string, execTime float64)
 	BeforeRunHook(ctx context.Context) error
 	GetBucket() ServerBucket
@@ -97,4 +97,11 @@ func (i *AppInfo) WithBuildOS(buildOS string) *AppInfo {
 func (i *AppInfo) WithBuildCommit(commit string) *AppInfo {
 	i.BuildCommit = commit
 	return i
+}
+
+// ClientInitializer represents a client wrapper that can be initialized.
+// Concrete types are checked via type switch in service.setClients().
+type ClientInitializer interface {
+	// ClientName returns the name of the client for logging/debugging
+	ClientName() string
 }
