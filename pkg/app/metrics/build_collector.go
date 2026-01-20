@@ -33,17 +33,21 @@ func InfoCollector(desc *prometheus.Desc) prometheus.Collector {
 	}
 }
 
-func BuildInfoCollector(name string, info *ds.AppInfo) prometheus.Collector {
+// BuildInfoCollector creates a Prometheus collector that exposes build information.
+// The serviceName parameter is the service-level name (Main.Name, e.g., "my-api").
+// The info.AppName is the application name within the service (Application.Name, e.g., "web-app").
+func BuildInfoCollector(serviceName string, info *ds.AppInfo) prometheus.Collector {
 	return InfoCollector(
 		prometheus.NewDesc(
-			name+"_build_info",
-			"Build information about the "+name+" app.",
+			serviceName+"_build_info",
+			"Build information about the "+serviceName+" service.",
 			nil,
 			prometheus.Labels{
-				"appname":     info.AppName,
-				"version":     info.Version,
-				"buildCommit": info.BuildCommit,
-				"buildtime":   info.BuildTime,
+				"service_name": serviceName,
+				"app_name":     info.AppName,
+				"version":      info.Version,
+				"build_commit": info.BuildCommit,
+				"build_time":   info.BuildTime,
 			},
 		),
 	)

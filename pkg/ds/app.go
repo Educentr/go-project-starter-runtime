@@ -53,6 +53,9 @@ type RunnableService interface {
 	OnlyRunnable
 }
 
+// AppInfo contains build and runtime information about an application instance.
+// AppName is the name of the specific Application within a service (e.g., "web-app", "worker-app").
+// For the service-level name (Main.Name), use constant.ServiceName instead.
 type AppInfo struct {
 	AppName     string `json:"app_name"`
 	Version     string `json:"version"`
@@ -72,9 +75,12 @@ type ServerBucket struct {
 	AppReady *atomic.Bool
 }
 
-func NewAppInfo(name string) *AppInfo {
+// NewAppInfo creates a new AppInfo with the given application name.
+// The appName parameter should be the Application.Name (e.g., "web-app"),
+// not the service name (Main.Name). Use constant.ServiceName for the service name.
+func NewAppInfo(appName string) *AppInfo {
 	return &AppInfo{
-		AppName:     name,
+		AppName:     appName,
 		StartupTime: time.Now().Format(time.RFC3339),
 	}
 }
