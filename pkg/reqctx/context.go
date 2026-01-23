@@ -113,6 +113,11 @@ func SetActor(ctx context.Context, act ds.Actor) (context.Context, error) {
 		})
 	}
 
+	// Mark that actor was set in process info
+	if pi, err := GetProcessInfo(ctx); err == nil && pi != nil {
+		pi.ActorWasSet = true
+	}
+
 	return context.WithValue(ctx, actorField, act), nil
 }
 

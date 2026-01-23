@@ -4,4 +4,5 @@ type RequestProcessInfo struct {
 	Command       string
 	Params        string
 	ContentLength int
+	ActorWasSet   bool
 }
