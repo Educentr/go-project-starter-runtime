@@ -10,6 +10,7 @@ require (
 	github.com/prometheus/client_golang v1.23.2
 	github.com/prometheus/otlptranslator v0.0.2
 	github.com/rs/zerolog v1.33.0
+	github.com/sirupsen/logrus v1.9.4
 	github.com/stretchr/testify v1.11.1
 	go.opentelemetry.io/otel v1.38.0
 	go.opentelemetry.io/otel/exporters/prometheus v0.60.0

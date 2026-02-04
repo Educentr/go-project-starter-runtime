@@ -31,19 +31,28 @@ func FromContextLoggerZlog(ctx context.Context) AppZlogLogger {
 	panic("AppZlogLogger not found in context")
 }
 
+// WrapLogger implements AppLogger interface.
+// Creates a new zerolog instance in ctx using the stored creator function.
+func (l AppZlogLogger) WrapLogger(ctx context.Context, ocPrefix, ocPath string) context.Context {
+	return l.zlogCreator(ocPrefix, ocPath).WithContext(ctx)
+}
+
+// CopyFields implements AppLogger interface.
+// Copies all zerolog fields from source context's logger to destination context's logger.
+func (l AppZlogLogger) CopyFields(source, destination context.Context) context.Context {
+	zlog.Ctx(destination).UpdateContext(func(c zlog.Context) zlog.Context {
+		return zlog.Ctx(source).With()
+	})
+
+	return destination
+}
+
 // ReWrapZlog позволяет переложить логгер из одного контекста в другой
 // а так же создать инстанс zlog-а в контексте получателе
+//
+// Deprecated: Use ReWrap instead, which works with any AppLogger implementation.
 func ReWrapZlog(source context.Context, destination context.Context, ocPrefix, ocPath string) context.Context {
-	nCtx, err := CopyLoggerContext(source, destination)
-	if err != nil {
-		zlog.Ctx(source).Error().Err(err).Msg("error rewrap logger")
-		return destination
-	}
-
-	nCtx = FromContextLoggerZlog(nCtx).WrapZlog(source, ocPrefix, ocPath)
-	zlog.Ctx(nCtx).UpdateContext(func(c zlog.Context) zlog.Context { return zlog.Ctx(source).With() })
-
-	return nCtx
+	return ReWrap(source, destination, ocPrefix, ocPath)
 }
 
 // WrapZlog создаёт zlog в контексте
