@@ -32,25 +32,37 @@ var (
 	errInvalidRequestID          = fmt.Errorf("invalid RequestID value type")
 )
 
-// CreateContext creates a new context with cloned onlineconf config and timeout.
+// CreateContextWithTimeout creates a request context with explicit timeout.
+// Unlike CreateContext, it does not read timeout from onlineconf —
+// the caller is responsible for resolving the timeout value.
+//
 // Note: This function does NOT wrap the logger - that's the responsibility of the calling code.
 // The caller should wrap the logger after calling this function if needed.
 //
 // Returns error if onlineconf config cloning fails. Callers should handle this error
 // appropriately (e.g., return 500 Internal Server Error in REST handlers).
-//
-// TODO: Refactor to remove onlineconf dependency:
-// 1. onlineconf.Clone should return a cleanup callback that does Release
-// 2. CreateContext should accept timeout settings as input parameter (not fetch from onlineconf)
-// 3. This will allow runtime to be independent of configuration system
-//
-// TODO: Add callback support for context creation hooks:
-// 1. Accept variadic callback functions that will be called after context creation
-// 2. Each callback receives (sourceCtx, newCtx, configPathPrefix, configPath) and returns modified context
-// 3. This allows automatic logger rewrapping and other context transformations
-// 4. Example signature: CreateContext(..., callbacks ...ContextCallback) where
-//    type ContextCallback func(source, dest context.Context, prefix, path string) context.Context
-// 5. Callbacks are called in order, each receiving the result of the previous one
+func CreateContextWithTimeout(mainCtx, configCtx context.Context, timeout time.Duration) (context.Context, context.CancelFunc, error) {
+	clonedCtx, err := onlineconf.Clone(configCtx, mainCtx)
+	if err != nil {
+		return mainCtx, func() {}, errors.Wrap(ErrCreateContext, err.Error())
+	}
+
+	resultCtx := clonedCtx
+	var cancel context.CancelFunc = func() {}
+
+	if timeout != 0 {
+		resultCtx, cancel = context.WithTimeout(clonedCtx, timeout)
+	}
+
+	return resultCtx, func() {
+		cancel()
+		_ = onlineconf.Release(configCtx, clonedCtx)
+	}, nil
+}
+
+// Deprecated: Use CreateContextWithTimeout instead. CreateContext reads timeout
+// from onlineconf internally, which prevents proper fallback logic and validation.
+// Will be removed in v0.15.0.
 func CreateContext(mainCtx, configCtx context.Context, configPathPrefix, configPath string) (context.Context, context.CancelFunc, error) {
 	// Get timeout from onlineconf before cloning
 	ocDefaultPath := onlineconf.MakePath(configPathPrefix, "default/timeout")
