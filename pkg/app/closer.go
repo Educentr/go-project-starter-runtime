@@ -60,7 +60,7 @@ func (a *App) gracefulStop(ctx context.Context) error {
 
 	a.ready.Store(false) // помечаем, что приложение не готово принимать запросы
 
-	shutdownCtx, shutdownCancel := context.WithTimeout(ctx, gracefulShutdownTimeout)
+	shutdownCtx, shutdownCancel := context.WithTimeout(context.WithoutCancel(ctx), gracefulShutdownTimeout)
 	defer shutdownCancel()
 
 	if len(a.transports) > 0 {

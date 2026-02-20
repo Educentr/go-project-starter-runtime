@@ -46,3 +46,9 @@ var globalLoggerUpdater LoggerContextUpdater // nil by default
 func SetLoggerUpdater(updater LoggerContextUpdater) {
 	globalLoggerUpdater = updater
 }
+
+// GetLoggerUpdater returns the global logger updater.
+// Returns nil if no updater was set.
+func GetLoggerUpdater() LoggerContextUpdater {
+	return globalLoggerUpdater
+}

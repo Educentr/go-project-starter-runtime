@@ -33,8 +33,7 @@ var (
 )
 
 // CreateContextWithTimeout creates a request context with explicit timeout.
-// Unlike CreateContext, it does not read timeout from onlineconf —
-// the caller is responsible for resolving the timeout value.
+// The caller is responsible for resolving the timeout value.
 //
 // Note: This function does NOT wrap the logger - that's the responsibility of the calling code.
 // The caller should wrap the logger after calling this function if needed.
@@ -60,44 +59,6 @@ func CreateContextWithTimeout(mainCtx, configCtx context.Context, timeout time.D
 	}, nil
 }
 
-// Deprecated: Use CreateContextWithTimeout instead. CreateContext reads timeout
-// from onlineconf internally, which prevents proper fallback logic and validation.
-// Will be removed in v0.15.0.
-func CreateContext(mainCtx, configCtx context.Context, configPathPrefix, configPath string) (context.Context, context.CancelFunc, error) {
-	// Get timeout from onlineconf before cloning
-	ocDefaultPath := onlineconf.MakePath(configPathPrefix, "default/timeout")
-	ocPath := onlineconf.MakePath(configPathPrefix, configPath, "timeout")
-
-	timeoutDef, err := onlineconf.GetDuration(configCtx, ocDefaultPath, 0)
-	if err != nil {
-		return mainCtx, func() {}, errors.Wrapf(ErrCreateContext, "get default timeout from %s: %v", ocDefaultPath, err)
-	}
-
-	timeout, err := onlineconf.GetDuration(configCtx, ocPath, timeoutDef)
-	if err != nil {
-		return mainCtx, func() {}, errors.Wrapf(ErrCreateContext, "get timeout from %s: %v", ocPath, err)
-	}
-
-	// Clone onlineconf config from main context
-	clonedCtx, err := onlineconf.Clone(configCtx, mainCtx)
-	if err != nil {
-		return mainCtx, func() {}, errors.Wrap(ErrCreateContext, err.Error())
-	}
-
-	// resultCtx will be wrapped with timeout if needed, but we keep clonedCtx
-	// separately for onlineconf.Release which requires the original cloned context
-	resultCtx := clonedCtx
-	var cancel context.CancelFunc = func() {}
-
-	if timeout != 0 {
-		resultCtx, cancel = context.WithTimeout(clonedCtx, timeout)
-	}
-
-	return resultCtx, func() {
-		cancel()
-		_ = onlineconf.Release(configCtx, clonedCtx)
-	}, nil
-}
 
 func GetActor(ctx context.Context) (ds.Actor, error) {
 	ac := ctx.Value(actorField)
